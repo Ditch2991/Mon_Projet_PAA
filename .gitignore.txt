@@ -1,0 +1,12 @@
+# Données brutes (trop volumineuses pour GitHub)
+*.xlsx
+!logo_PAA.jpg
+
+# Secrets (ne jamais committer)
+.streamlit/secrets.toml
+
+# Temporaires
+__pycache__/
+*.pyc
+.DS_Store
+tmpdir/
