@@ -567,7 +567,7 @@ elif page == "Prévisions long terme":
 
     fig = go.Figure()
     if serie is not None:
-        ann_r2 = serie.resample("A").sum()
+        ann_r2 = serie.resample("YE").sum()
         fig.add_scatter(
             x=ann_r2.index.year.tolist(), y=ann_r2.values,
             mode="lines+markers", name="Réel",
