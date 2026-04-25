@@ -1157,7 +1157,7 @@ elif page == "Conteneurs — KPIs":
         cc1.metric("Total", f"err={mdl_cnt['err_tot']:.1f}%", "Holt amortie 2023-2025")
         cc2.metric("Non transbordé", f"WMAPE={mdl_cnt['wmape_nt']:.1f}%", "Holt amortie")
         cc3.metric("Transbordé TC2", "Constant 2025", f"{mdl_cnt['transb_tc2_2025']:,} TEU/an")
-        cc4.metric("Transbordé hab.", f"WMAPE={mdl_cnt['wmape_th']:.1f}%", "Holt amortie")
+        cc4.metric("Transbordé hab.", "Résiduel", "Total − (Non transb. + TC2)")
 
 elif page == "Conteneurs — Historique":
     if fc_cnt is None or ser_cnt is None:
