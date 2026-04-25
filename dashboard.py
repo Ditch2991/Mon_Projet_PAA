@@ -1558,7 +1558,7 @@ if st.session_state.get("show_admin", False):
                 if f_march:
                     advance("Entraînement modèles marchandises...")
                     r = subprocess.run(
-                        ["python", "train_models.py"],
+                        [sys.executable, "train_models.py"],
                         capture_output=True, text=True, timeout=300)
                     if r.returncode == 0:
                         success.append("Marchandises — modèles entraînés")
@@ -1567,7 +1567,7 @@ if st.session_state.get("show_admin", False):
 
                     advance("Prévisions marchandises...")
                     r = subprocess.run(
-                        ["python", "forecast_engine.py"],
+                        [sys.executable, "forecast_engine.py"],
                         capture_output=True, text=True, timeout=300)
                     if r.returncode == 0:
                         success.append("Marchandises — prévisions générées")
@@ -1578,7 +1578,7 @@ if st.session_state.get("show_admin", False):
                 if f_esc:
                     advance("Entraînement modèles escales...")
                     r = subprocess.run(
-                        ["python", "train_models_escales.py"],
+                        [sys.executable, "train_models_escales.py"],
                         capture_output=True, text=True, timeout=300)
                     if r.returncode == 0:
                         success.append("Escales — modèles entraînés")
@@ -1587,7 +1587,7 @@ if st.session_state.get("show_admin", False):
 
                     advance("Prévisions escales...")
                     r = subprocess.run(
-                        ["python", "forecast_engine_escales.py"],
+                        [sys.executable, "forecast_engine_escales.py"],
                         capture_output=True, text=True, timeout=300)
                     if r.returncode == 0:
                         success.append("Escales — prévisions générées")
@@ -1598,7 +1598,7 @@ if st.session_state.get("show_admin", False):
                 if f_cnt:
                     advance("Entraînement modèles conteneurs...")
                     r = subprocess.run(
-                        ["python", "train_models_conteneurs.py"],
+                        [sys.executable, "train_models_conteneurs.py"],
                         capture_output=True, text=True, timeout=300)
                     if r.returncode == 0:
                         success.append("Conteneurs — modèles entraînés")
@@ -1607,7 +1607,7 @@ if st.session_state.get("show_admin", False):
 
                     advance("Prévisions conteneurs...")
                     r = subprocess.run(
-                        ["python", "forecast_engine_conteneurs.py"],
+                        [sys.executable, "forecast_engine_conteneurs.py"],
                         capture_output=True, text=True, timeout=300)
                     if r.returncode == 0:
                         success.append("Conteneurs — prévisions générées")
