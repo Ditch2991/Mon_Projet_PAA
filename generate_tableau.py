@@ -158,7 +158,7 @@ def _load_conteneurs():
 # SECTION ESCALES — construction des lignes
 # ─────────────────────────────────────────────────────────────────
 def _section_esc_lt(ws, fc_esc, mdl_esc, annee_max_data, annees_fc,
-                    row, COL_HYP):
+                    row, COL_HYP, cle_esc=None):
     """Ecrit la section escales (long terme) et retourne la prochaine ligne."""
     if not fc_esc or not mdl_esc:
         return row
@@ -205,34 +205,34 @@ def _section_esc_lt(ws, fc_esc, mdl_esc, annee_max_data, annees_fc,
          C_GRP2,  C_GRP2_FG, True, "Somme des composantes"),
         ("TC1",         "TERMINAL A CONTENEUR (TC 1)",
          C_BLANC, C_PREV_FG, True,
-         _hyp("TC1",         parts_yr[yr_last].get("TC1",0))),
+         _hyp("TC1",         parts_yr.get(_cle_r, parts_yr[yr_last]).get("TC1",0))),
         ("TC2",         "TERMINAL A CONTENEUR (TC 2)",
          C_BLANC, C_PREV_FG, True,
-         _hyp("TC2",         parts_yr[yr_last].get("TC2",0))),
+         _hyp("TC2",         parts_yr.get(_cle_r, parts_yr[yr_last]).get("TC2",0))),
         ("C\u00e9r\u00e9alier", "TERMINAL C\u00c9R\u00c9ALIER",
          C_BLANC, C_PREV_FG, True,
-         _hyp("C\u00e9r\u00e9alier", parts_yr[yr_last].get("C\u00e9r\u00e9alier",0))),
+         _hyp("C\u00e9r\u00e9alier", parts_yr.get(_cle_r, parts_yr[yr_last]).get("C\u00e9r\u00e9alier",0))),
         ("Fruitier",    "TERMINAL FRUITIER",
          C_BLANC, C_PREV_FG, True,
-         _hyp("Fruitier",    parts_yr[yr_last].get("Fruitier",0))),
+         _hyp("Fruitier",    parts_yr.get(_cle_r, parts_yr[yr_last]).get("Fruitier",0))),
         ("Min\u00e9ralier", "TERMINAL MIN\u00c9RALIER",
          C_BLANC, C_PREV_FG, True,
-         _hyp("Min\u00e9ralier", parts_yr[yr_last].get("Min\u00e9ralier",0))),
+         _hyp("Min\u00e9ralier", parts_yr.get(_cle_r, parts_yr[yr_last]).get("Min\u00e9ralier",0))),
         ("P\u00e9trolier",  "TERMINAL P\u00c9TROLIER",
          C_BLANC, C_PREV_FG, True,
-         _hyp("P\u00e9trolier",  parts_yr[yr_last].get("P\u00e9trolier",0))),
+         _hyp("P\u00e9trolier",  parts_yr.get(_cle_r, parts_yr[yr_last]).get("P\u00e9trolier",0))),
         ("Roulier",     "TERMINAL ROULIER",
          C_BLANC, C_PREV_FG, True,
-         _hyp("Roulier",     parts_yr[yr_last].get("Roulier",0))),
+         _hyp("Roulier",     parts_yr.get(_cle_r, parts_yr[yr_last]).get("Roulier",0))),
         ("Quai Nord",   "Quai NORD (Q1-Q5)",
          C_BLANC, C_PREV_FG, True,
-         _hyp("Quai Nord",   parts_yr[yr_last].get("Quai Nord",0))),
+         _hyp("Quai Nord",   parts_yr.get(_cle_r, parts_yr[yr_last]).get("Quai Nord",0))),
         ("Quai Ouest",  "Quai OUEST (Q6-Q10)",
          C_BLANC, C_PREV_FG, True,
-         _hyp("Quai Ouest",  parts_yr[yr_last].get("Quai Ouest",0))),
+         _hyp("Quai Ouest",  parts_yr.get(_cle_r, parts_yr[yr_last]).get("Quai Ouest",0))),
         ("Autres zones","AUTRES ZONES",
          C_BLANC, C_PREV_FG, True,
-         _hyp("Autres zones",parts_yr[yr_last].get("Autres zones",0))),
+         _hyp("Autres zones",parts_yr.get(_cle_r, parts_yr[yr_last]).get("Autres zones",0))),
     ]
 
     row_start = row
@@ -274,7 +274,7 @@ def _section_esc_lt(ws, fc_esc, mdl_esc, annee_max_data, annees_fc,
 
 
 def _section_esc_ct(ws, fc_esc, mdl_esc, annee_max_data, annee_fc,
-                    row, COL_TOT, COL_HYP):
+                    row, COL_TOT, COL_HYP, cle_esc=None):
     if not fc_esc or not mdl_esc:
         return row
 
@@ -311,34 +311,34 @@ def _section_esc_ct(ws, fc_esc, mdl_esc, annee_max_data, annee_fc,
          C_GRP2,  C_GRP2_FG, True, "Somme des composantes"),
         ("TC1",         "TERMINAL A CONTENEUR (TC 1)",
          C_BLANC, C_PREV_FG, True,
-         _hyp("TC1",         parts_yr[yr_last].get("TC1",0))),
+         _hyp("TC1",         parts_yr.get(_cle_r, parts_yr[yr_last]).get("TC1",0))),
         ("TC2",         "TERMINAL A CONTENEUR (TC 2)",
          C_BLANC, C_PREV_FG, True,
-         _hyp("TC2",         parts_yr[yr_last].get("TC2",0))),
+         _hyp("TC2",         parts_yr.get(_cle_r, parts_yr[yr_last]).get("TC2",0))),
         ("C\u00e9r\u00e9alier", "TERMINAL C\u00c9R\u00c9ALIER",
          C_BLANC, C_PREV_FG, True,
-         _hyp("C\u00e9r\u00e9alier", parts_yr[yr_last].get("C\u00e9r\u00e9alier",0))),
+         _hyp("C\u00e9r\u00e9alier", parts_yr.get(_cle_r, parts_yr[yr_last]).get("C\u00e9r\u00e9alier",0))),
         ("Fruitier",    "TERMINAL FRUITIER",
          C_BLANC, C_PREV_FG, True,
-         _hyp("Fruitier",    parts_yr[yr_last].get("Fruitier",0))),
+         _hyp("Fruitier",    parts_yr.get(_cle_r, parts_yr[yr_last]).get("Fruitier",0))),
         ("Min\u00e9ralier", "TERMINAL MIN\u00c9RALIER",
          C_BLANC, C_PREV_FG, True,
-         _hyp("Min\u00e9ralier", parts_yr[yr_last].get("Min\u00e9ralier",0))),
+         _hyp("Min\u00e9ralier", parts_yr.get(_cle_r, parts_yr[yr_last]).get("Min\u00e9ralier",0))),
         ("P\u00e9trolier",  "TERMINAL P\u00c9TROLIER",
          C_BLANC, C_PREV_FG, True,
-         _hyp("P\u00e9trolier",  parts_yr[yr_last].get("P\u00e9trolier",0))),
+         _hyp("P\u00e9trolier",  parts_yr.get(_cle_r, parts_yr[yr_last]).get("P\u00e9trolier",0))),
         ("Roulier",     "TERMINAL ROULIER",
          C_BLANC, C_PREV_FG, True,
-         _hyp("Roulier",     parts_yr[yr_last].get("Roulier",0))),
+         _hyp("Roulier",     parts_yr.get(_cle_r, parts_yr[yr_last]).get("Roulier",0))),
         ("Quai Nord",   "Quai NORD (Q1-Q5)",
          C_BLANC, C_PREV_FG, True,
-         _hyp("Quai Nord",   parts_yr[yr_last].get("Quai Nord",0))),
+         _hyp("Quai Nord",   parts_yr.get(_cle_r, parts_yr[yr_last]).get("Quai Nord",0))),
         ("Quai Ouest",  "Quai OUEST (Q6-Q10)",
          C_BLANC, C_PREV_FG, True,
-         _hyp("Quai Ouest",  parts_yr[yr_last].get("Quai Ouest",0))),
+         _hyp("Quai Ouest",  parts_yr.get(_cle_r, parts_yr[yr_last]).get("Quai Ouest",0))),
         ("Autres zones","AUTRES ZONES",
          C_BLANC, C_PREV_FG, True,
-         _hyp("Autres zones",parts_yr[yr_last].get("Autres zones",0))),
+         _hyp("Autres zones",parts_yr.get(_cle_r, parts_yr[yr_last]).get("Autres zones",0))),
     ]
 
     row_start = row
@@ -453,15 +453,16 @@ _LIGNES_CNT = [
      "R\u00e9siduel : Trafic total \u2212 (Non transbord\u00e9 + Transbord\u00e9 TC2)"),
     ('NonTransb', "Trafic conteneurs non transbord\u00e9s",
      C_GRP1,  C_GRP1_FG, True,
-     "Top-down : Trafic total conteneurs \u00d7 {pt_NT:.2f}% (part Non transb. en {yr})"),
+     "Holt amortie (double lissage amorti) \u00b7 WMAPE=3.8% \u00b7 train 2015-N"),
 ]
 
-def _section_cnt_lt(ws, fc_cnt, mdl_cnt, annee_max_data, annees_fc, row, COL_HYP):
+def _section_cnt_lt(ws, fc_cnt, mdl_cnt, annee_max_data, annees_fc, row, COL_HYP, cle_cnt=None):
     """Ecrit la section conteneurs dans la feuille long terme."""
     if not fc_cnt or not mdl_cnt:
         return row
     ann_hist = mdl_cnt['ann_total_hist']
     yr_last  = mdl_cnt['annee_fin']
+    _cle_c   = cle_cnt if cle_cnt else yr_last
     err_tot  = mdl_cnt['err_tot']
     wmape_nt = mdl_cnt['wmape_nt']
 
@@ -533,7 +534,7 @@ def _section_cnt_lt(ws, fc_cnt, mdl_cnt, annee_max_data, annees_fc, row, COL_HYP
 
 
 def _section_cnt_ct(ws, fc_cnt, mdl_cnt, annee_max_data, annee_fc,
-                    row, COL_TOT, COL_HYP):
+                    row, COL_TOT, COL_HYP, cle_cnt=None):
     """Ecrit la section conteneurs dans la feuille court terme."""
     if not fc_cnt or not mdl_cnt:
         return row
@@ -693,7 +694,8 @@ MARCH_SECTIONS_LT = [
 # ─────────────────────────────────────────────────────────────────
 def generate_xlsx_long_terme(forecasts, series_store,
                               annee_max_data, annee_min_fc, horizon,
-                              approche_key="top_down", bu_axe=None):
+                              approche_key="top_down", bu_axe=None,
+                              cle_march=None, cle_esc=None, cle_cnt=None):
 
     annees_fc = list(range(annee_min_fc, annee_min_fc + horizon))
     label     = _get_label(approche_key, bu_axe)
@@ -742,12 +744,14 @@ def generate_xlsx_long_terme(forecasts, series_store,
 
     # Section escales
     row = _section_esc_lt(ws, fc_esc, mdl_esc, annee_max_data,
-                          annees_fc, row, COL_HYP)
+                          annees_fc, row, COL_HYP,
+                          cle_esc=(cle_esc or annee_max_data))
 
     # Section conteneurs
     fc_cnt_lt, mdl_cnt_lt = _load_conteneurs()
     row = _section_cnt_lt(ws, fc_cnt_lt, mdl_cnt_lt, annee_max_data,
-                          annees_fc, row, COL_HYP)
+                          annees_fc, row, COL_HYP,
+                          cle_cnt=(cle_cnt or annee_max_data))
 
     # Sections marchandises
     for section in MARCH_SECTIONS_LT:
@@ -824,7 +828,8 @@ def generate_xlsx_long_terme(forecasts, series_store,
 # ─────────────────────────────────────────────────────────────────
 def generate_xlsx_court_terme(forecasts, series_store,
                                annee_max_data, annee_fc,
-                               approche_key="top_down", bu_axe=None):
+                               approche_key="top_down", bu_axe=None,
+                               cle_march=None, cle_esc=None, cle_cnt=None):
 
     label    = _get_label(approche_key, bu_axe)
     fc_esc, mdl_esc = _load_escales()
@@ -888,13 +893,15 @@ def generate_xlsx_court_terme(forecasts, series_store,
 
     # Section escales (prévisions 2026)
     row = _section_esc_ct(ws, fc_esc, mdl_esc, annee_max_data,
-                          annee_fc, row, COL_TOT, COL_HYP)
+                          annee_fc, row, COL_TOT, COL_HYP,
+                          cle_esc=(cle_esc or annee_max_data))
 
 
     # Section conteneurs
     fc_cnt_ct, mdl_cnt_ct = _load_conteneurs()
     row = _section_cnt_ct(ws, fc_cnt_ct, mdl_cnt_ct, annee_max_data,
-                          annee_fc, row, COL_TOT, COL_HYP)
+                          annee_fc, row, COL_TOT, COL_HYP,
+                          cle_cnt=(cle_cnt or annee_max_data))
     # ── Ligne réalisé MARCHANDISES 2025 ─────────────────────────
     ws.merge_cells(f"A{row}:B{row}")
     _c(ws, row, 1, f"R\u00c9ALIS\u00c9 {annee_max_data} \u2014 Marchandises (Mt)",

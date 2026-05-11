@@ -171,10 +171,13 @@ with st.sidebar:
         st.markdown("---")
         st.markdown("**Clé de répartition**")
         annees_dispo_m = list(range(ANNEE_MAX_DATA, ANNEE_MAX_DATA - 11, -1))
+        if "cle_march" not in st.session_state:
+            st.session_state["cle_march"] = ANNEE_MAX_DATA
         cle_march = st.selectbox(
             "Année de référence",
             annees_dispo_m,
-            index=0,
+            index=annees_dispo_m.index(st.session_state["cle_march"])
+                  if st.session_state["cle_march"] in annees_dispo_m else 0,
             key="cle_march",
             help="Parts utilisées pour ventiler le trafic global entre les segments. Par défaut : année N-1."
         )
@@ -198,10 +201,13 @@ with st.sidebar:
             annees_dispo_e = list(range(mdl_esc["annee_fin"], mdl_esc["annee_debut"] - 1, -1))
         else:
             annees_dispo_e = [ANNEE_MAX_DATA]
+        if "cle_esc" not in st.session_state:
+            st.session_state["cle_esc"] = annees_dispo_e[0]
         cle_esc = st.selectbox(
             "Année de référence",
             annees_dispo_e,
-            index=0,
+            index=annees_dispo_e.index(st.session_state["cle_esc"])
+                  if st.session_state["cle_esc"] in annees_dispo_e else 0,
             key="cle_esc",
             help="Parts utilisées pour ventiler entre les terminaux. Par défaut : année N-1."
         )
@@ -226,10 +232,13 @@ with st.sidebar:
             annees_dispo_c = list(range(mdl_cnt["annee_fin"], mdl_cnt["annee_debut"] - 1, -1))
         else:
             annees_dispo_c = [ANNEE_MAX_DATA]
+        if "cle_cnt" not in st.session_state:
+            st.session_state["cle_cnt"] = annees_dispo_c[0]
         cle_cnt = st.selectbox(
             "Année de référence",
             annees_dispo_c,
-            index=0,
+            index=annees_dispo_c.index(st.session_state["cle_cnt"])
+                  if st.session_state["cle_cnt"] in annees_dispo_c else 0,
             key="cle_cnt",
             help="Parts utilisées pour ventiler entre les terminaux et destinations. Par défaut : année N-1."
         )
@@ -250,14 +259,23 @@ with st.sidebar:
     st.markdown("**Export Excel**")
     try:
         from generate_tableau import generate_xlsx_long_terme, generate_xlsx_court_terme
+        # Clés de répartition choisies par l'utilisateur
+        cle_m = st.session_state.get("cle_march", ANNEE_MAX_DATA)
+        cle_e = st.session_state.get("cle_esc",   ANNEE_MAX_DATA)
+        cle_c = st.session_state.get("cle_cnt",   ANNEE_MAX_DATA)
+
         buf_lt = generate_xlsx_long_terme(
             forecasts=forecasts, series_store=series_store,
             annee_max_data=ANNEE_MAX_DATA,
             annee_min_fc=ANNEE_MIN_FC, horizon=horizon,
             approche_key=approche_key, bu_axe=bu_axe,
+            cle_march=cle_m, cle_esc=cle_e, cle_cnt=cle_c,
         )
+        lbl_lt = f"📥 Long terme ({ANNEE_MIN_FC}–{annee_cible})"
+        if cle_m!=ANNEE_MAX_DATA or cle_e!=ANNEE_MAX_DATA or cle_c!=ANNEE_MAX_DATA:
+            lbl_lt += " ⚙️"
         st.download_button(
-            label=f"📥 Long terme ({ANNEE_MIN_FC}–{annee_cible})",
+            label=lbl_lt,
             data=buf_lt,
             file_name=f"PAA_previsions_long_terme_{ANNEE_MIN_FC}_{annee_cible}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -267,6 +285,7 @@ with st.sidebar:
             forecasts=forecasts, series_store=series_store,
             annee_max_data=ANNEE_MAX_DATA, annee_fc=ANNEE_MIN_FC,
             approche_key=approche_key, bu_axe=bu_axe,
+            cle_march=cle_m, cle_esc=cle_e, cle_cnt=cle_c,
         )
         st.download_button(
             label=f"📥 Court terme ({ANNEE_MIN_FC})",
