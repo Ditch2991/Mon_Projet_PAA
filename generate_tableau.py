@@ -193,9 +193,11 @@ def _section_esc_lt(ws, fc_esc, mdl_esc, annee_max_data, annees_fc,
     ws.row_dimensions[row].height = 19
     row += 1
 
+    _cle_r = cle_esc if cle_esc else yr_last
+
     def _hyp(g, p):
         return (f"Top-down : Nb total escales \u00d7 {p:.2f}%"
-                f" (part {g} en {yr_last})")
+                f" (part {g} en {_cle_r})")
 
     LIGNES = [
         ("TOTAL",       "Nombre total d\u2019escales",
@@ -298,9 +300,11 @@ def _section_esc_ct(ws, fc_esc, mdl_esc, annee_max_data, annee_fc,
     ws.row_dimensions[row].height = 19
     row += 1
 
+    _cle_r = cle_esc if cle_esc else yr_last
+
     def _hyp(g, p):
         return (f"Top-down : Nb total escales \u00d7 {p:.2f}%"
-                f" (part {g} en {yr_last})")
+                f" (part {g} en {_cle_r})")
 
     LIGNES = [
         ("TOTAL",       "Nombre total d\u2019escales",

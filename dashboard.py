@@ -129,6 +129,14 @@ AXES_SEGS = {
 # ─────────────────────────────────────────────
 # 2. SIDEBAR
 # ─────────────────────────────────────────────
+# ── Initialisation session_state clés (une seule fois au démarrage) ──
+if "cle_march" not in st.session_state:
+    st.session_state["cle_march"] = None   # None = N-1 par défaut
+if "cle_esc" not in st.session_state:
+    st.session_state["cle_esc"]   = None
+if "cle_cnt" not in st.session_state:
+    st.session_state["cle_cnt"]   = None
+
 with st.sidebar:
     # ── LOGO + TITRE ────────────────────────────────────────────
     try:
@@ -157,9 +165,9 @@ with st.sidebar:
 
     # ── PAGES DU MODULE SÉLECTIONNÉ ────────────────────────────
     # Valeurs par défaut des clés (si module pas encore sélectionné)
-    cle_march = st.session_state.get("cle_march", ANNEE_MAX_DATA)
-    cle_esc   = st.session_state.get("cle_esc",   ANNEE_MAX_DATA)
-    cle_cnt   = st.session_state.get("cle_cnt",   ANNEE_MAX_DATA)
+    cle_march = st.session_state.get("cle_march") or ANNEE_MAX_DATA
+    cle_esc   = st.session_state.get("cle_esc")   or ANNEE_MAX_DATA
+    cle_cnt   = st.session_state.get("cle_cnt")   or ANNEE_MAX_DATA
 
     if module == "📦 Marchses":
         page = st.radio("", [
@@ -176,8 +184,6 @@ with st.sidebar:
         st.markdown("---")
         st.markdown("**Clé de répartition**")
         annees_dispo_m = list(range(ANNEE_MAX_DATA, ANNEE_MAX_DATA - 11, -1))
-        if "cle_march" not in st.session_state:
-            st.session_state["cle_march"] = ANNEE_MAX_DATA
         cle_march = st.selectbox(
             "Année de référence",
             annees_dispo_m,
@@ -204,8 +210,6 @@ with st.sidebar:
             annees_dispo_e = list(range(mdl_esc["annee_fin"], mdl_esc["annee_debut"] - 1, -1))
         else:
             annees_dispo_e = [ANNEE_MAX_DATA]
-        if "cle_esc" not in st.session_state:
-            st.session_state["cle_esc"] = annees_dispo_e[0]
         cle_esc = st.selectbox(
             "Année de référence",
             annees_dispo_e,
@@ -233,8 +237,6 @@ with st.sidebar:
             annees_dispo_c = list(range(mdl_cnt["annee_fin"], mdl_cnt["annee_debut"] - 1, -1))
         else:
             annees_dispo_c = [ANNEE_MAX_DATA]
-        if "cle_cnt" not in st.session_state:
-            st.session_state["cle_cnt"] = annees_dispo_c[0]
         cle_cnt = st.selectbox(
             "Année de référence",
             annees_dispo_c,
@@ -259,9 +261,9 @@ with st.sidebar:
     try:
         from generate_tableau import generate_xlsx_long_terme, generate_xlsx_court_terme
         # Clés de répartition choisies par l'utilisateur
-        cle_m = st.session_state.get("cle_march", ANNEE_MAX_DATA)
-        cle_e = st.session_state.get("cle_esc",   ANNEE_MAX_DATA)
-        cle_c = st.session_state.get("cle_cnt",   ANNEE_MAX_DATA)
+        cle_m = st.session_state.get("cle_march") or ANNEE_MAX_DATA
+        cle_e = st.session_state.get("cle_esc")   or ANNEE_MAX_DATA
+        cle_c = st.session_state.get("cle_cnt")   or ANNEE_MAX_DATA
 
         buf_lt = generate_xlsx_long_terme(
             forecasts=forecasts, series_store=series_store,
