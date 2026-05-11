@@ -9,6 +9,7 @@ import numpy as np
 import plotly.graph_objects as go
 import pickle
 import warnings
+import sys
 warnings.filterwarnings("ignore")
 
 # ─────────────────────────────────────────────
@@ -166,6 +167,19 @@ with st.sidebar:
         approche_key = "top_down"; bu_axe = None
         axe_label = list(AXES_SEGS.keys())[0]
         segment   = AXES_SEGS[axe_label][0]
+        # Sélecteur clé de répartition
+        st.markdown("---")
+        st.markdown("**Clé de répartition**")
+        annees_dispo_m = list(range(ANNEE_MAX_DATA, ANNEE_MAX_DATA - 11, -1))
+        cle_march = st.selectbox(
+            "Année de référence",
+            annees_dispo_m,
+            index=0,
+            key="cle_march",
+            help="Parts utilisées pour ventiler le trafic global entre les segments. Par défaut : année N-1."
+        )
+        if cle_march != ANNEE_MAX_DATA:
+            st.caption(f"⚠️ Clé {cle_march} au lieu de {ANNEE_MAX_DATA} (N-1)")
     elif module == "🚢 Escales":
         page = st.radio("", [
             "Escales — KPIs",
@@ -177,6 +191,22 @@ with st.sidebar:
         approche_key = "top_down"; bu_axe = None
         axe_label = list(AXES_SEGS.keys())[0]
         segment   = AXES_SEGS[axe_label][0]
+        # Sélecteur clé de répartition
+        st.markdown("---")
+        st.markdown("**Clé de répartition**")
+        if mdl_esc:
+            annees_dispo_e = list(range(mdl_esc["annee_fin"], mdl_esc["annee_debut"] - 1, -1))
+        else:
+            annees_dispo_e = [ANNEE_MAX_DATA]
+        cle_esc = st.selectbox(
+            "Année de référence",
+            annees_dispo_e,
+            index=0,
+            key="cle_esc",
+            help="Parts utilisées pour ventiler entre les terminaux. Par défaut : année N-1."
+        )
+        if cle_esc != annees_dispo_e[0]:
+            st.caption(f"⚠️ Clé {cle_esc} au lieu de {annees_dispo_e[0]} (N-1)")
 
     else:  # Conteneurs
         page = st.radio("", [
@@ -189,6 +219,22 @@ with st.sidebar:
         approche_key = "top_down"; bu_axe = None
         axe_label = list(AXES_SEGS.keys())[0]
         segment   = AXES_SEGS[axe_label][0]
+        # Sélecteur clé de répartition
+        st.markdown("---")
+        st.markdown("**Clé de répartition**")
+        if mdl_cnt:
+            annees_dispo_c = list(range(mdl_cnt["annee_fin"], mdl_cnt["annee_debut"] - 1, -1))
+        else:
+            annees_dispo_c = [ANNEE_MAX_DATA]
+        cle_cnt = st.selectbox(
+            "Année de référence",
+            annees_dispo_c,
+            index=0,
+            key="cle_cnt",
+            help="Parts utilisées pour ventiler entre les terminaux et destinations. Par défaut : année N-1."
+        )
+        if cle_cnt != annees_dispo_c[0]:
+            st.caption(f"⚠️ Clé {cle_cnt} au lieu de {annees_dispo_c[0]} (N-1)")
 
     # ── HORIZON (commun aux 3 modules) ─────────────────────────
     st.markdown("---")
@@ -260,28 +306,22 @@ def _get_parts(annee):
     return parts
 
 def ann(seg, yr):
-    """Valeur annuelle selon l'approche de réconciliation choisie."""
+    """Valeur annuelle selon l'approche Top-down avec clé choisie."""
     fc = forecasts.get((seg, yr), {})
-    if approche_key == "top_down":
-        if seg == "Total":
-            return fc.get("annuel", 0)
-        axe = SEG_TO_AXE.get(seg)
-        if axe:
-            td = fc.get("annuel_td", {}).get(axe)
-            if td is not None: return round(float(td), 3)
-        return fc.get("annuel", 0)
-    # Bottom-up
-    segs_axe = AXE_TO_SEGS.get(bu_axe, [])
     if seg == "Total":
-        return round(sum(
-            forecasts.get((s, yr), {}).get("annuel", 0)
-            for s in segs_axe), 3)
-    if SEG_TO_AXE.get(seg) == bu_axe:
         return fc.get("annuel", 0)
-    # Hors axe : redistribution
-    total_bu = sum(forecasts.get((s, yr), {}).get("annuel", 0) for s in segs_axe)
-    parts    = _get_parts(yr - 1)
-    return round(total_bu * parts.get(seg, 0), 3)
+    axe = SEG_TO_AXE.get(seg)
+    if axe:
+        td = fc.get("annuel_td", {}).get(axe)
+        if td is not None:
+            # Recalculer avec la clé choisie si différente de N-1
+            cle_ref = st.session_state.get("cle_march", ANNEE_MAX_DATA)
+            if cle_ref != ANNEE_MAX_DATA:
+                total_ann = forecasts.get(("Total", yr), {}).get("annuel", 0)
+                parts = _get_parts(cle_ref)
+                return round(float(total_ann) * parts.get(seg, 0), 3)
+            return round(float(td), 3)
+    return fc.get("annuel", 0)
 
 def mens(seg, yr):
     """Array 12 valeurs mensuelles selon l'approche choisie."""
@@ -758,7 +798,8 @@ elif page == "Escales — KPIs":
 
         with col_t:
             st.markdown("#### Parts par terminal (2025)")
-            parts_2025 = mdl_esc['parts_terminaux'][yr_last]
+            cle_esc_ref = st.session_state.get('cle_esc', yr_last)
+            parts_2025 = mdl_esc['parts_terminaux'].get(cle_esc_ref, mdl_esc['parts_terminaux'][yr_last])
             rows_kpi = sorted(parts_2025.items(), key=lambda x: -x[1])
             tbl = pd.DataFrame(rows_kpi, columns=["Terminal", "Part 2025 (%)"])
             tbl["Part 2025 (%)"] = tbl["Part 2025 (%)"].map(lambda x: f"{x:.1f}%")
@@ -1145,7 +1186,7 @@ elif page == "Conteneurs — KPIs":
 
         with col_t:
             st.markdown("#### Parts par terminal (2025)")
-            pts = mdl_cnt['parts_term'][yr_last]
+            pts = mdl_cnt['parts_term'].get(st.session_state.get('cle_cnt', yr_last), mdl_cnt['parts_term'][yr_last])
             rows = sorted(pts.items(), key=lambda x: -x[1])
             tbl = pd.DataFrame(rows, columns=["Terminal","Part (%)"])
             tbl["Part (%)"] = tbl["Part (%)"].map(lambda x: f"{x:.1f}%")
