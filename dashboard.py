@@ -156,6 +156,11 @@ with st.sidebar:
     st.markdown("---")
 
     # ── PAGES DU MODULE SÉLECTIONNÉ ────────────────────────────
+    # Valeurs par défaut des clés (si module pas encore sélectionné)
+    cle_march = st.session_state.get("cle_march", ANNEE_MAX_DATA)
+    cle_esc   = st.session_state.get("cle_esc",   ANNEE_MAX_DATA)
+    cle_cnt   = st.session_state.get("cle_cnt",   ANNEE_MAX_DATA)
+
     if module == "📦 Marchses":
         page = st.radio("", [
             "KPIs globaux",
@@ -176,8 +181,6 @@ with st.sidebar:
         cle_march = st.selectbox(
             "Année de référence",
             annees_dispo_m,
-            index=annees_dispo_m.index(st.session_state["cle_march"])
-                  if st.session_state["cle_march"] in annees_dispo_m else 0,
             key="cle_march",
             help="Parts utilisées pour ventiler le trafic global entre les segments. Par défaut : année N-1."
         )
@@ -206,8 +209,6 @@ with st.sidebar:
         cle_esc = st.selectbox(
             "Année de référence",
             annees_dispo_e,
-            index=annees_dispo_e.index(st.session_state["cle_esc"])
-                  if st.session_state["cle_esc"] in annees_dispo_e else 0,
             key="cle_esc",
             help="Parts utilisées pour ventiler entre les terminaux. Par défaut : année N-1."
         )
@@ -237,8 +238,6 @@ with st.sidebar:
         cle_cnt = st.selectbox(
             "Année de référence",
             annees_dispo_c,
-            index=annees_dispo_c.index(st.session_state["cle_cnt"])
-                  if st.session_state["cle_cnt"] in annees_dispo_c else 0,
             key="cle_cnt",
             help="Parts utilisées pour ventiler entre les terminaux et destinations. Par défaut : année N-1."
         )
