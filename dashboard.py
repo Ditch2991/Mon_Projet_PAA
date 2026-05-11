@@ -129,14 +129,6 @@ AXES_SEGS = {
 # ─────────────────────────────────────────────
 # 2. SIDEBAR
 # ─────────────────────────────────────────────
-# ── Initialisation session_state clés (une seule fois au démarrage) ──
-if "cle_march" not in st.session_state:
-    st.session_state["cle_march"] = None   # None = N-1 par défaut
-if "cle_esc" not in st.session_state:
-    st.session_state["cle_esc"]   = None
-if "cle_cnt" not in st.session_state:
-    st.session_state["cle_cnt"]   = None
-
 with st.sidebar:
     # ── LOGO + TITRE ────────────────────────────────────────────
     try:
@@ -164,10 +156,10 @@ with st.sidebar:
     st.markdown("---")
 
     # ── PAGES DU MODULE SÉLECTIONNÉ ────────────────────────────
-    # Valeurs par défaut des clés (si module pas encore sélectionné)
-    cle_march = st.session_state.get("cle_march") or ANNEE_MAX_DATA
-    cle_esc   = st.session_state.get("cle_esc")   or ANNEE_MAX_DATA
-    cle_cnt   = st.session_state.get("cle_cnt")   or ANNEE_MAX_DATA
+    # Valeurs par défaut des clés (persistantes via _val)
+    cle_march = st.session_state.get("cle_march_val", ANNEE_MAX_DATA) or ANNEE_MAX_DATA
+    cle_esc   = st.session_state.get("cle_esc_val",   ANNEE_MAX_DATA) or ANNEE_MAX_DATA
+    cle_cnt   = st.session_state.get("cle_cnt_val",   ANNEE_MAX_DATA) or ANNEE_MAX_DATA
 
     if module == "📦 Marchses":
         page = st.radio("", [
@@ -184,12 +176,20 @@ with st.sidebar:
         st.markdown("---")
         st.markdown("**Clé de répartition**")
         annees_dispo_m = list(range(ANNEE_MAX_DATA, ANNEE_MAX_DATA - 11, -1))
-        cle_march = st.selectbox(
+        def _save_march():
+            st.session_state["cle_march_val"] = st.session_state["cle_march_sel"]
+        if "cle_march_val" not in st.session_state:
+            st.session_state["cle_march_val"] = ANNEE_MAX_DATA
+        idx_m = annees_dispo_m.index(st.session_state["cle_march_val"])                 if st.session_state["cle_march_val"] in annees_dispo_m else 0
+        st.selectbox(
             "Année de référence",
             annees_dispo_m,
-            key="cle_march",
+            index=idx_m,
+            key="cle_march_sel",
+            on_change=_save_march,
             help="Parts utilisées pour ventiler le trafic global entre les segments. Par défaut : année N-1."
         )
+        cle_march = st.session_state["cle_march_val"]
         if cle_march != ANNEE_MAX_DATA:
             st.caption(f"⚠️ Clé {cle_march} au lieu de {ANNEE_MAX_DATA} (N-1)")
     elif module == "🚢 Escales":
@@ -210,12 +210,20 @@ with st.sidebar:
             annees_dispo_e = list(range(mdl_esc["annee_fin"], mdl_esc["annee_debut"] - 1, -1))
         else:
             annees_dispo_e = [ANNEE_MAX_DATA]
-        cle_esc = st.selectbox(
+        def _save_esc():
+            st.session_state["cle_esc_val"] = st.session_state["cle_esc_sel"]
+        if "cle_esc_val" not in st.session_state:
+            st.session_state["cle_esc_val"] = annees_dispo_e[0]
+        idx_e = annees_dispo_e.index(st.session_state["cle_esc_val"])                 if st.session_state["cle_esc_val"] in annees_dispo_e else 0
+        st.selectbox(
             "Année de référence",
             annees_dispo_e,
-            key="cle_esc",
+            index=idx_e,
+            key="cle_esc_sel",
+            on_change=_save_esc,
             help="Parts utilisées pour ventiler entre les terminaux. Par défaut : année N-1."
         )
+        cle_esc = st.session_state["cle_esc_val"]
         if cle_esc != annees_dispo_e[0]:
             st.caption(f"⚠️ Clé {cle_esc} au lieu de {annees_dispo_e[0]} (N-1)")
 
@@ -237,12 +245,20 @@ with st.sidebar:
             annees_dispo_c = list(range(mdl_cnt["annee_fin"], mdl_cnt["annee_debut"] - 1, -1))
         else:
             annees_dispo_c = [ANNEE_MAX_DATA]
-        cle_cnt = st.selectbox(
+        def _save_cnt():
+            st.session_state["cle_cnt_val"] = st.session_state["cle_cnt_sel"]
+        if "cle_cnt_val" not in st.session_state:
+            st.session_state["cle_cnt_val"] = annees_dispo_c[0]
+        idx_c = annees_dispo_c.index(st.session_state["cle_cnt_val"])                 if st.session_state["cle_cnt_val"] in annees_dispo_c else 0
+        st.selectbox(
             "Année de référence",
             annees_dispo_c,
-            key="cle_cnt",
+            index=idx_c,
+            key="cle_cnt_sel",
+            on_change=_save_cnt,
             help="Parts utilisées pour ventiler entre les terminaux et destinations. Par défaut : année N-1."
         )
+        cle_cnt = st.session_state["cle_cnt_val"]
         if cle_cnt != annees_dispo_c[0]:
             st.caption(f"⚠️ Clé {cle_cnt} au lieu de {annees_dispo_c[0]} (N-1)")
 
@@ -261,9 +277,9 @@ with st.sidebar:
     try:
         from generate_tableau import generate_xlsx_long_terme, generate_xlsx_court_terme
         # Clés de répartition choisies par l'utilisateur
-        cle_m = st.session_state.get("cle_march") or ANNEE_MAX_DATA
-        cle_e = st.session_state.get("cle_esc")   or ANNEE_MAX_DATA
-        cle_c = st.session_state.get("cle_cnt")   or ANNEE_MAX_DATA
+        cle_m = st.session_state.get("cle_march_val", ANNEE_MAX_DATA) or ANNEE_MAX_DATA
+        cle_e = st.session_state.get("cle_esc_val",   ANNEE_MAX_DATA) or ANNEE_MAX_DATA
+        cle_c = st.session_state.get("cle_cnt_val",   ANNEE_MAX_DATA) or ANNEE_MAX_DATA
 
         buf_lt = generate_xlsx_long_terme(
             forecasts=forecasts, series_store=series_store,
@@ -335,7 +351,7 @@ def ann(seg, yr):
         td = fc.get("annuel_td", {}).get(axe)
         if td is not None:
             # Recalculer avec la clé choisie si différente de N-1
-            cle_ref = st.session_state.get("cle_march", ANNEE_MAX_DATA)
+            cle_ref = st.session_state.get("cle_march_val", ANNEE_MAX_DATA) or ANNEE_MAX_DATA
             if cle_ref != ANNEE_MAX_DATA:
                 total_ann = forecasts.get(("Total", yr), {}).get("annuel", 0)
                 parts = _get_parts(cle_ref)
@@ -818,7 +834,7 @@ elif page == "Escales — KPIs":
 
         with col_t:
             st.markdown("#### Parts par terminal (2025)")
-            cle_esc_ref = st.session_state.get('cle_esc', yr_last)
+            cle_esc_ref = st.session_state.get('cle_esc_val', yr_last) or yr_last
             parts_2025 = mdl_esc['parts_terminaux'].get(cle_esc_ref, mdl_esc['parts_terminaux'][yr_last])
             rows_kpi = sorted(parts_2025.items(), key=lambda x: -x[1])
             tbl = pd.DataFrame(rows_kpi, columns=["Terminal", "Part 2025 (%)"])
@@ -1206,7 +1222,7 @@ elif page == "Conteneurs — KPIs":
 
         with col_t:
             st.markdown("#### Parts par terminal (2025)")
-            pts = mdl_cnt['parts_term'].get(st.session_state.get('cle_cnt', yr_last), mdl_cnt['parts_term'][yr_last])
+            pts = mdl_cnt['parts_term'].get(st.session_state.get('cle_cnt_val', yr_last) or yr_last, mdl_cnt['parts_term'][yr_last])
             rows = sorted(pts.items(), key=lambda x: -x[1])
             tbl = pd.DataFrame(rows, columns=["Terminal","Part (%)"])
             tbl["Part (%)"] = tbl["Part (%)"].map(lambda x: f"{x:.1f}%")
