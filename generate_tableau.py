@@ -98,12 +98,18 @@ def _get_parts(series_store, annee):
                       else 1.0 / len(AXE_TO_SEGS[SEG_TO_AXE[seg]]))
     return parts
 
-def _val_ann(forecasts, series_store, key, yr, approche, bu_axe, cache=None):
+def _val_ann(forecasts, series_store, key, yr, approche, bu_axe,
+             cache=None, cle_march=None):
     fc = forecasts.get((key, yr), {})
     if approche == "top_down":
         if key == "Total": return fc.get("annuel", 0)
         axe = SEG_TO_AXE.get(key)
         if axe:
+            # Si clé différente de N-1 : recalculer avec la clé choisie
+            if cle_march and cle_march != (yr - 1):
+                total_yr = forecasts.get(("Total", yr), {}).get("annuel", 0)
+                parts_ref = _get_parts(series_store, cle_march)
+                return round(float(total_yr) * parts_ref.get(key, 0), 3)
             td = fc.get("annuel_td", {}).get(axe)
             if td is not None: return round(float(td), 3)
         return fc.get("annuel", 0)
@@ -115,12 +121,17 @@ def _val_ann(forecasts, series_store, key, yr, approche, bu_axe, cache=None):
     parts = (cache or {}).get(yr - 1) or _get_parts(series_store, yr - 1)
     return round(total_bu * parts.get(key, 0), 3)
 
-def _val_mens(forecasts, series_store, key, yr, approche, bu_axe, cache=None):
+def _val_mens(forecasts, series_store, key, yr, approche, bu_axe,
+              cache=None, cle_march=None):
     fc = forecasts.get((key, yr), {})
     if approche == "top_down":
         if key == "Total": return fc.get("fc", np.zeros(12))
         axe = SEG_TO_AXE.get(key)
         if axe:
+            if cle_march and cle_march != (yr - 1):
+                total_m = fc.get("fc", np.zeros(12))
+                parts_ref = _get_parts(series_store, cle_march)
+                return np.array([v * parts_ref.get(key, 0) for v in total_m])
             td = fc.get("top_down", {}).get(axe)
             if td is not None: return np.array(td)
         return fc.get("fc", np.zeros(12))
@@ -287,9 +298,16 @@ def _section_esc_ct(ws, fc_esc, mdl_esc, annee_max_data, annee_fc,
     def em(cle):
         if cle == "TOTAL":   return np.array(fc_esc[annee_fc]["mensuel"], dtype=float)
         if cle == "PORT_COM":
-            # PORT_COM mensuel = mensuel TOTAL (tout le port est Port de Commerce)
             return np.array(fc_esc[annee_fc]["mensuel"], dtype=float)
-        return np.array(fc_esc[annee_fc]["segments"].get(cle, np.zeros(12)), dtype=float)
+        # Recalculer avec la clé choisie : total mensuel * part / 100
+        total_m = np.array(fc_esc[annee_fc]["mensuel"], dtype=float)
+        p = parts_yr.get(_cle_r, parts_yr[yr_last]).get(cle, 0)
+        result = np.round(total_m * p / 100).astype(int).astype(float)
+        # Ajustement arrondi sur le mois dominant
+        diff = total_m.sum() * p / 100 - result.sum()
+        if abs(diff) >= 0.5:
+            result[int(np.argmax(total_m))] += round(diff)
+        return result
 
     # En-tete
     ws.merge_cells(f"A{row}:B{row}")
@@ -779,10 +797,12 @@ def generate_xlsx_long_terme(forecasts, series_store,
                bold=bold, num_fmt="#,##0.000")
             for i, yr in enumerate(annees_fc):
                 v = _val_ann(forecasts, series_store, key, yr,
-                             approche_key, bu_axe, cache)
+                             approche_key, bu_axe, cache,
+                             cle_march=cle_march)
                 _c(ws, row, 4 + i, round(float(v), 3),
                    bg=bg, fg=fg, bold=bold, num_fmt="#,##0.000")
-            _c(ws, row, COL_HYP, hyp,
+            hyp_dyn = hyp.replace("en 2025", "en " + str(cle_march)) if cle_march and cle_march != annee_max_data else hyp
+            _c(ws, row, COL_HYP, hyp_dyn,
                bg=C_BLANC, fg=C_PREV_FG, italic=True, size=9, align="left")
             ws.row_dimensions[row].height = 16
             row += 1
@@ -982,7 +1002,8 @@ def generate_xlsx_court_terme(forecasts, series_store,
         row_start = row
         for key, label_l, bg, fg, bold, hyp in section["lignes"]:
             fc_m = _val_mens(forecasts, series_store, key, annee_fc,
-                             approche_key, bu_axe, cache)
+                           approche_key, bu_axe, cache,
+                           cle_march=cle_march)
             fc_m = [round(float(v), 3) for v in fc_m]
             _c(ws, row, 1, "", bg=bg)
             _c(ws, row, 2, label_l, bg=bg, fg=fg, bold=bold, align="left")
