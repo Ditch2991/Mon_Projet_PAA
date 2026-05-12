@@ -186,16 +186,16 @@ def _section_esc_lt(ws, fc_esc, mdl_esc, annee_max_data, annees_fc,
             if cle == "TOTAL":
                 return ann_hist.get(yr, 0)
             if cle == "PORT_COM":
-                # réalisé : somme exacte des terminaux
                 return sum(int(fc_esc[("historique", yr)]["segments"]
                                .get(g, np.zeros(12)).sum()) for g in SEGS_ESC)
             return int(fc_esc[("historique", yr)]["segments"]
                        .get(cle, np.zeros(12)).sum())
         if cle == "TOTAL":   return fc_esc[yr]["annuel"]
-        if cle == "PORT_COM":
-            # prévisions : PORT_COM = TOTAL (tout le port est Port de Commerce)
-            return fc_esc[yr]["annuel"]
-        return int(fc_esc[yr]["segments"].get(cle, np.zeros(12)).sum())
+        if cle == "PORT_COM": return fc_esc[yr]["annuel"]
+        # Recalculer avec la clé choisie : total × part[_cle_r] / 100
+        total_yr = fc_esc[yr]["annuel"]
+        p = parts_yr.get(_cle_r, parts_yr[yr_last]).get(cle, 0)
+        return int(round(total_yr * p / 100))
 
     # En-tete section
     ws.merge_cells(f"A{row}:B{row}")
