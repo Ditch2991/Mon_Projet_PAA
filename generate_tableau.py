@@ -105,11 +105,12 @@ def _val_ann(forecasts, series_store, key, yr, approche, bu_axe,
         if key == "Total": return fc.get("annuel", 0)
         axe = SEG_TO_AXE.get(key)
         if axe:
-            # Si clé différente de N-1 : recalculer avec la clé choisie
-            if cle_march and cle_march != (yr - 1):
-                total_yr = forecasts.get(("Total", yr), {}).get("annuel", 0)
+            total_yr = forecasts.get(("Total", yr), {}).get("annuel", 0)
+            # Toujours recalculer avec cle_march si fournie
+            if cle_march:
                 parts_ref = _get_parts(series_store, cle_march)
                 return round(float(total_yr) * parts_ref.get(key, 0), 3)
+            # Sinon utiliser N-1 (comportement par défaut)
             td = fc.get("annuel_td", {}).get(axe)
             if td is not None: return round(float(td), 3)
         return fc.get("annuel", 0)
@@ -128,8 +129,9 @@ def _val_mens(forecasts, series_store, key, yr, approche, bu_axe,
         if key == "Total": return fc.get("fc", np.zeros(12))
         axe = SEG_TO_AXE.get(key)
         if axe:
-            if cle_march and cle_march != (yr - 1):
-                total_m = fc.get("fc", np.zeros(12))
+            total_m = np.array(fc.get("fc", np.zeros(12)), dtype=float)
+            # Toujours recalculer avec cle_march si fournie
+            if cle_march:
                 parts_ref = _get_parts(series_store, cle_march)
                 return np.array([v * parts_ref.get(key, 0) for v in total_m])
             td = fc.get("top_down", {}).get(axe)
@@ -498,6 +500,34 @@ def _section_cnt_lt(ws, fc_cnt, mdl_cnt, annee_max_data, annees_fc, row, COL_HYP
     row += 1
 
     row_start = row
+    # Parts avec la clé choisie
+    pt    = mdl_cnt['parts_term'].get(_cle_c, mdl_cnt['parts_term'].get(yr_last, {}))
+    pd_d  = mdl_cnt['parts_dest'].get(_cle_c, mdl_cnt['parts_dest'].get(yr_last, {}))
+
+    def _cnt_v_cle(cle, yr):
+        """Recalcule la valeur avec la clé choisie."""
+        if yr == annee_max_data:
+            return _cnt_v(cle, yr, fc_cnt, ann_hist, annee_max_data)
+        total_yr = fc_cnt[yr]['annuel']
+        if cle == 'TOTAL':    return total_yr
+        if cle == 'PORT_COM': return total_yr
+        # Terminaux
+        mapping = {'TC1':'TC1','TC2':'TC2','Fruitier':'Fruitier',
+                   'Roulier':'Roulier','Autres':'Autres zones'}
+        if cle in mapping:
+            return int(round(total_yr * pt.get(mapping[cle], 0) / 100))
+        # Destination
+        if cle == 'NonTransb':
+            return int(round(total_yr * pd_d.get('Non transb.', 0) / 100))
+        if cle == 'Transb':
+            return int(round(total_yr * pd_d.get('Transbordé', 0) / 100))
+        # TC2 constant et habituel inchangés
+        if cle == 'TransbTC2':  return fc_cnt[yr]['transb_tc2_ann']
+        if cle == 'TransbHab':
+            nt  = int(round(total_yr * pd_d.get('Non transb.', 0) / 100))
+            return total_yr - nt - fc_cnt[yr]['transb_tc2_ann']
+        return 0
+
     for cle, label, bg, fg, bold, hyp in _LIGNES_CNT:
         _c(ws, row, 1, "", bg=bg)
         _c(ws, row, 2, label, bg=bg, fg=fg, bold=bold, align="left")
@@ -506,23 +536,21 @@ def _section_cnt_lt(ws, fc_cnt, mdl_cnt, annee_max_data, annees_fc, row, COL_HYP
         _c(ws, row, 3, int(v_r), bg=bg,
            fg=C_REEL_FG if cle == "TOTAL" else fg,
            bold=bold, num_fmt="#,##0")
-        # Previsions
+        # Previsions avec clé choisie
         for i, yr in enumerate(annees_fc):
-            v = _cnt_v(cle, yr, fc_cnt, ann_hist, annee_max_data)
+            v = _cnt_v_cle(cle, yr)
             _c(ws, row, 4 + i, int(v), bg=bg, fg=fg, bold=bold, num_fmt="#,##0")
-        # Formater l'hypothèse avec les vraies clés
-        pt = mdl_cnt['parts_term'].get(yr_last, {})
-        pd_dest = mdl_cnt['parts_dest'].get(yr_last, {})
+        # Hypothèse avec clé choisie
         hyp_fmt = hyp.format(
             err=mdl_cnt['err_tot'],
-            yr=yr_last,
+            yr=_cle_c,
             pt_TC1=pt.get('TC1',0),
             pt_TC2=pt.get('TC2',0),
             pt_Fruitier=pt.get('Fruitier',0),
             pt_Roulier=pt.get('Roulier',0),
             pt_Autres=pt.get('Autres zones',0),
-            pt_Transb=pd_dest.get('Transbordé',0),
-            pt_NT=pd_dest.get('Non transb.',0),
+            pt_Transb=pd_d.get('Transbordé',0),
+            pt_NT=pd_d.get('Non transb.',0),
             tc2=mdl_cnt.get('transb_tc2_2025',0),
         ) if '{' in hyp else hyp
         _c(ws, row, COL_HYP, hyp_fmt,
@@ -561,10 +589,14 @@ def _section_cnt_ct(ws, fc_cnt, mdl_cnt, annee_max_data, annee_fc,
     if not fc_cnt or not mdl_cnt:
         return row
     yr_last  = mdl_cnt['annee_fin']
+    _cle_c   = cle_cnt if cle_cnt else yr_last
     err_tot  = mdl_cnt['err_tot']
     wmape_nt = mdl_cnt['wmape_nt']
     ann_hist = mdl_cnt['ann_total_hist']
     noms_m   = mdl_cnt['noms_mois']
+    # Parts avec clé choisie
+    pt_c   = mdl_cnt['parts_term'].get(_cle_c, mdl_cnt['parts_term'].get(yr_last, {}))
+    pd_c   = mdl_cnt['parts_dest'].get(_cle_c, mdl_cnt['parts_dest'].get(yr_last, {}))
 
     # En-tete
     ws.merge_cells(f"A{row}:B{row}")
@@ -593,18 +625,29 @@ def _section_cnt_ct(ws, fc_cnt, mdl_cnt, annee_max_data, annee_fc,
 
     def get_mens(cle):
         import numpy as np
-        if cle == 'TOTAL':     return fc_cnt[annee_fc]['mensuel']
-        if cle == 'TC1':       return fc_cnt[annee_fc]['segments_term']['TC1']
-        if cle == 'TC2':       return fc_cnt[annee_fc]['segments_term']['TC2']
-        if cle == 'Fruitier':  return fc_cnt[annee_fc]['segments_term']['Fruitier']
-        if cle == 'Roulier':   return fc_cnt[annee_fc]['segments_term']['Roulier']
-        if cle == 'Autres':    return fc_cnt[annee_fc]['segments_term']['Autres zones']
+        total_m = np.array(fc_cnt[annee_fc]['mensuel'], dtype=float)
+        if cle == 'TOTAL':    return total_m
+        if cle == 'PORT_COM': return total_m
+        # Recalculer avec clé choisie (comme em() dans escales CT)
+        def _mens_part(p):
+            r = np.round(total_m * p / 100).astype(int).astype(float)
+            diff = total_m.sum() * p / 100 - r.sum()
+            if abs(diff) >= 0.5: r[int(np.argmax(total_m))] += round(diff)
+            return r
+        mapping = {'TC1':'TC1','TC2':'TC2','Fruitier':'Fruitier',
+                   'Roulier':'Roulier','Autres':'Autres zones'}
+        if cle in mapping:
+            return _mens_part(pt_c.get(mapping[cle], 0))
+        if cle == 'NonTransb':
+            return _mens_part(pd_c.get('Non transb.', 0))
         if cle == 'Transb':
-            return (fc_cnt[annee_fc]['segments_dest']['Transb. TC2'] +
-                    fc_cnt[annee_fc]['segments_dest']['Transb. habituel'])
-        if cle == 'TransbTC2': return fc_cnt[annee_fc]['segments_dest']['Transb. TC2']
-        if cle == 'TransbHab': return fc_cnt[annee_fc]['segments_dest']['Transb. habituel']
-        if cle == 'NonTransb': return fc_cnt[annee_fc]['segments_dest']['Non transb.']
+            return _mens_part(pd_c.get('Transbordé', 0))
+        # TC2 constant et habituel inchangés
+        if cle == 'TransbTC2': return np.array(fc_cnt[annee_fc]['segments_dest']['Transb. TC2'], dtype=float)
+        if cle == 'TransbHab':
+            nt_m = _mens_part(pd_c.get('Non transb.', 0))
+            tc2_m = np.array(fc_cnt[annee_fc]['segments_dest']['Transb. TC2'], dtype=float)
+            return total_m - nt_m - tc2_m
         return np.zeros(12)
 
     row_start = row
@@ -618,19 +661,17 @@ def _section_cnt_ct(ws, fc_cnt, mdl_cnt, annee_max_data, annee_fc,
         import numpy as np
         _c(ws, row, COL_TOT, int(np.array(mens).sum()),
            bg=bg, fg=fg, bold=True, num_fmt="#,##0")
-        # Formater l'hypothèse avec les vraies clés
-        pt = mdl_cnt['parts_term'].get(yr_last, {})
-        pd_dest = mdl_cnt['parts_dest'].get(yr_last, {})
+        # Hypothèse avec clé choisie
         hyp_fmt = hyp.format(
             err=mdl_cnt['err_tot'],
-            yr=yr_last,
-            pt_TC1=pt.get('TC1',0),
-            pt_TC2=pt.get('TC2',0),
-            pt_Fruitier=pt.get('Fruitier',0),
-            pt_Roulier=pt.get('Roulier',0),
-            pt_Autres=pt.get('Autres zones',0),
-            pt_Transb=pd_dest.get('Transbordé',0),
-            pt_NT=pd_dest.get('Non transb.',0),
+            yr=_cle_c,
+            pt_TC1=pt_c.get('TC1',0),
+            pt_TC2=pt_c.get('TC2',0),
+            pt_Fruitier=pt_c.get('Fruitier',0),
+            pt_Roulier=pt_c.get('Roulier',0),
+            pt_Autres=pt_c.get('Autres zones',0),
+            pt_Transb=pd_c.get('Transbordé',0),
+            pt_NT=pd_c.get('Non transb.',0),
             tc2=mdl_cnt.get('transb_tc2_2025',0),
         ) if '{' in hyp else hyp
         _c(ws, row, COL_HYP, hyp_fmt,
@@ -801,7 +842,7 @@ def generate_xlsx_long_terme(forecasts, series_store,
                              cle_march=cle_march)
                 _c(ws, row, 4 + i, round(float(v), 3),
                    bg=bg, fg=fg, bold=bold, num_fmt="#,##0.000")
-            hyp_dyn = hyp.replace("en 2025", "en " + str(cle_march)) if cle_march and cle_march != annee_max_data else hyp
+            hyp_dyn = hyp.replace("en 2025", "en " + str(cle_march or annee_max_data))
             _c(ws, row, COL_HYP, hyp_dyn,
                bg=C_BLANC, fg=C_PREV_FG, italic=True, size=9, align="left")
             ws.row_dimensions[row].height = 16
@@ -1012,7 +1053,8 @@ def generate_xlsx_court_terme(forecasts, series_store,
                    bg=bg, fg=fg, bold=bold, num_fmt="#,##0.000")
             _c(ws, row, COL_TOT, round(sum(fc_m), 3),
                bg=bg, fg=fg, bold=True, num_fmt="#,##0.000")
-            _c(ws, row, COL_HYP, hyp,
+            hyp_dyn = hyp.replace("en 2025", "en " + str(cle_march or annee_max_data))
+            _c(ws, row, COL_HYP, hyp_dyn,
                bg=C_BLANC, fg=C_PREV_FG, italic=True, size=9, align="left")
             ws.row_dimensions[row].height = 16
             row += 1
